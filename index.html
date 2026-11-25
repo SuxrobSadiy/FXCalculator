@@ -1,0 +1,1451 @@
+<!DOCTYPE html>
+<html lang="uz" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Universal Forex & Multi-Market Risk Kalkulyatori</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        terminal: {
+                            bg: '#060911',
+                            card: '#0D1322',
+                            input: '#090E1A',
+                            border: '#1E293B',
+                            hover: '#151E33'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Maxsus slayder dizayni */
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            background: transparent;
+            cursor: pointer;
+        }
+        input[type="range"]::-webkit-slider-runnable-track {
+            height: 8px;
+            border-radius: 999px;
+            background: #1E293B;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            margin-top: -6px;
+            background-color: #10B981;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            border: 3px solid #060911;
+            box-shadow: 0 0 12px rgba(16, 185, 129, 0.65);
+            transition: transform 0.15s ease;
+        }
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+        }
+
+        /* Number input o'qlarini yashirish */
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+    </style>
+</head>
+<body class="bg-terminal-bg text-slate-100 min-h-screen font-sans antialiased selection:bg-emerald-500 selection:text-white overflow-x-hidden">
+
+    <!-- Yuqori Navigatsiya Paneli -->
+    <header class="sticky top-0 z-30 border-b border-terminal-border bg-terminal-bg/90 backdrop-blur-md">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2">
+            <!-- Logo va Sarlavha -->
+            <div class="flex items-center gap-3 min-w-0">
+                <div class="w-10 h-10 shrink-0 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white shadow-lg shadow-emerald-500/25">
+                    <i class="fa-solid fa-chart-line text-lg"></i>
+                </div>
+                <div class="truncate">
+                    <div class="flex items-center gap-2">
+                        <h1 class="font-extrabold text-base sm:text-lg tracking-tight text-white truncate">Risk & Lot Simulyator</h1>
+                        <span class="hidden sm:inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-400 border border-emerald-500/25">
+                            Pro Terminal
+                        </span>
+                    </div>
+                    <p class="text-[11px] text-slate-400 truncate">Forex • Oltin • Indekslar • Kripto</p>
+                </div>
+            </div>
+
+            <!-- O'ng tugmalar -->
+            <div class="flex items-center gap-2 shrink-0">
+                <button id="resetBtn" title="Barcha qiymatlarni boshlang'ich holatga qaytarish" class="px-3 py-2 rounded-xl bg-terminal-card hover:bg-terminal-hover border border-terminal-border text-slate-300 hover:text-white transition-all text-xs font-bold flex items-center gap-1.5 active:scale-95">
+                    <i class="fa-solid fa-rotate-right text-emerald-400"></i>
+                    <span>Tiklash</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Asosiy Kontent -->
+    <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+            <!-- CHAP USTUN: Savdo Parametrlari (Inputs) -->
+            <div class="lg:col-span-7 bg-terminal-card rounded-2xl border border-terminal-border p-5 sm:p-6 shadow-2xl space-y-5">
+
+                <!-- 1. Instrument tanlash bo'limi -->
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <label for="instrumentSelect" class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                            <i class="fa-solid fa-layer-group text-emerald-400"></i>
+                            Bozor va Instrument
+                        </label>
+                        <span id="instrumentSpecBadge" class="text-[11px] font-semibold text-slate-300 bg-terminal-input px-2.5 py-0.5 rounded-md border border-terminal-border">
+                            1 Lot = 100,000 birlik
+                        </span>
+                    </div>
+
+                    <div class="relative">
+                        <select id="instrumentSelect" class="w-full rounded-xl bg-terminal-input border border-terminal-border hover:border-slate-700 px-4 py-3 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all appearance-none cursor-pointer">
+                            <optgroup label="Forex Asosiy (Major)">
+                                <option value="EUR/USD">EUR/USD — Yevro / AQSH Dollari</option>
+                                <option value="GBP/USD">GBP/USD — Britaniya Funti / AQSH Dollari</option>
+                                <option value="AUD/USD">AUD/USD — Avstraliya Dollari / AQSH Dollari</option>
+                                <option value="NZD/USD">NZD/USD — Yangi Zelandiya Dollari / USD</option>
+                                <option value="USD/CHF">USD/CHF — AQSH Dollari / Shveytsariya Franki</option>
+                                <option value="USD/CAD">USD/CAD — AQSH Dollari / Kanada Dollari</option>
+                            </optgroup>
+                            <optgroup label="Forex Yapon Ienasi (JPY)">
+                                <option value="USD/JPY">USD/JPY — AQSH Dollari / Yapon Ienasi</option>
+                                <option value="EUR/JPY">EUR/JPY — Yevro / Yapon Ienasi</option>
+                                <option value="GBP/JPY">GBP/JPY — Britaniya Funti / Yapon Ienasi</option>
+                            </optgroup>
+                            <optgroup label="Metalllar (Oltin va Kumush)">
+                                <option value="XAU/USD">XAU/USD — Oltin (Gold)</option>
+                                <option value="XAG/USD">XAG/USD — Kumush (Silver)</option>
+                            </optgroup>
+                            <optgroup label="Indekslar (Indices)">
+                                <option value="US30">US30 — Dow Jones Industrial</option>
+                                <option value="NAS100">NAS100 — Nasdaq 100</option>
+                                <option value="SPX500">SPX500 — S&P 500</option>
+                            </optgroup>
+                            <optgroup label="Kriptovalyutalar (Crypto)">
+                                <option value="BTC/USD">BTC/USD — Bitcoin</option>
+                                <option value="ETH/USD">ETH/USD — Ethereum</option>
+                            </optgroup>
+                            <optgroup label="Maxsus (Qo'lda sozlash)">
+                                <option value="CUSTOM">CUSTOM — Qo'lda kiritish (1 Pip qiymati)</option>
+                            </optgroup>
+                        </select>
+                        <i class="fa-solid fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-xs text-slate-400 pointer-events-none"></i>
+                    </div>
+
+                    <!-- Instrument haqida muhim eslatma -->
+                    <div id="instrumentNoteBox" class="mt-2.5 px-3.5 py-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-300 flex items-start gap-2.5">
+                        <i class="fa-solid fa-circle-info text-emerald-400 mt-0.5 shrink-0"></i>
+                        <span id="instrumentNoteText">Forex Major: 1 pip = 0.0001. 1.00 Standart Lotda 1 pip harakat = $10.00.</span>
+                    </div>
+                </div>
+
+                <!-- 2. Hisob Valyutasi va Depozit Balansi -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-3 border-t border-terminal-border">
+                    <div>
+                        <label for="accountCurrency" class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
+                            Hisob valyutasi
+                        </label>
+                        <div class="relative">
+                            <select id="accountCurrency" class="w-full rounded-xl bg-terminal-input border border-terminal-border px-3.5 py-3 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 appearance-none cursor-pointer">
+                                <option value="USD">USD ($)</option>
+                                <option value="EUR">EUR (€)</option>
+                                <option value="UZS">UZS (so'm)</option>
+                            </select>
+                            <i class="fa-solid fa-chevron-down absolute right-3.5 top-1/2 -translate-y-1/2 text-xs text-slate-400 pointer-events-none"></i>
+                        </div>
+                    </div>
+
+                    <div class="sm:col-span-2">
+                        <label for="accountBalance" class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
+                            Depozit balansi
+                        </label>
+                        <div class="relative">
+                            <span id="balancePrefix" class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm">$</span>
+                            <input type="number" id="accountBalance" value="1000" min="0" step="any" placeholder="1000"
+                                class="w-full rounded-xl bg-terminal-input border border-terminal-border pl-9 pr-4 py-3 text-base font-extrabold text-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dinamik Valyuta Kurslari (UZS, EUR yoki JPY/CHF/CAD juftliklar uchun ochiladi) -->
+                <div id="dynamicRateContainer" class="hidden grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 rounded-xl bg-blue-500/10 border border-blue-500/25">
+                    <div id="accountRateWrapper" class="hidden">
+                        <label id="accountRateLabel" for="accountExchangeRate" class="block text-[11px] font-bold text-blue-300 mb-1">
+                            1 USD kursi (UZS so'mda):
+                        </label>
+                        <input type="number" id="accountExchangeRate" value="12850" min="0.0001" step="any"
+                            class="w-full rounded-lg bg-terminal-bg border border-blue-800/60 px-3 py-2 text-xs font-bold text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+
+                    <div id="pairQuoteRateWrapper" class="hidden">
+                        <label id="pairQuoteRateLabel" for="pairQuoteRate" class="block text-[11px] font-bold text-blue-300 mb-1">
+                            Joriy USD/JPY kursi (1 Pip qiymati uchun):
+                        </label>
+                        <input type="number" id="pairQuoteRate" value="150.00" min="0.0001" step="any"
+                            class="w-full rounded-lg bg-terminal-bg border border-blue-800/60 px-3 py-2 text-xs font-bold text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+
+                <!-- 3. Risk Boshqaruvi (Foizda yoki Pul miqdorida) -->
+                <div class="p-4 rounded-xl bg-terminal-input border border-terminal-border">
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-bold uppercase tracking-wider text-slate-300">Risk foizi / miqdori</span>
+                            <span id="riskStatusBadge" class="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-500/15 text-emerald-400">
+                                Xavfsiz
+                            </span>
+                        </div>
+
+                        <!-- Foiz (%) vs Pul ($) almashtirgich -->
+                        <div class="inline-flex rounded-lg bg-terminal-bg p-0.5 border border-terminal-border">
+                            <button type="button" id="riskModePercentBtn" class="px-2.5 py-1 rounded-md text-xs font-bold bg-terminal-card text-emerald-400 shadow-sm transition-all">
+                                Foiz (%)
+                            </button>
+                            <button type="button" id="riskModeMoneyBtn" class="px-2.5 py-1 rounded-md text-xs font-bold text-slate-400 hover:text-slate-200 transition-all">
+                                Pul (<span id="riskMoneyBtnSymbol">$</span>)
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Foiz rejimi boshqaruvi -->
+                    <div id="riskPercentControls">
+                        <div class="flex items-center gap-3 mb-2.5">
+                            <input type="range" id="riskSlider" min="0.1" max="10" step="0.1" value="1" class="w-full">
+                            <div class="relative w-24 shrink-0">
+                                <input type="number" id="riskPercentInput" value="1" min="0.01" max="100" step="0.1"
+                                    class="w-full rounded-lg bg-terminal-bg border border-terminal-border pl-2.5 pr-6 py-1.5 text-right text-sm font-extrabold text-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                                <span class="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">%</span>
+                            </div>
+                        </div>
+
+                        <!-- Tezkor foiz tugmalari -->
+                        <div class="flex flex-wrap items-center gap-1.5">
+                            <button type="button" data-risk="0.5" class="risk-preset-btn px-2.5 py-1 rounded-lg text-xs font-bold bg-terminal-bg border border-terminal-border hover:border-emerald-500 transition-all">0.5%</button>
+                            <button type="button" data-risk="1" class="risk-preset-btn px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-500 text-white border border-emerald-500 transition-all">1%</button>
+                            <button type="button" data-risk="1.5" class="risk-preset-btn px-2.5 py-1 rounded-lg text-xs font-bold bg-terminal-bg border border-terminal-border hover:border-emerald-500 transition-all">1.5%</button>
+                            <button type="button" data-risk="2" class="risk-preset-btn px-2.5 py-1 rounded-lg text-xs font-bold bg-terminal-bg border border-terminal-border hover:border-emerald-500 transition-all">2%</button>
+                            <button type="button" data-risk="3" class="risk-preset-btn px-2.5 py-1 rounded-lg text-xs font-bold bg-terminal-bg border border-terminal-border hover:border-amber-500 transition-all">3%</button>
+                            <button type="button" data-risk="5" class="risk-preset-btn px-2.5 py-1 rounded-lg text-xs font-bold bg-terminal-bg border border-terminal-border hover:border-rose-500 transition-all">5%</button>
+                        </div>
+                    </div>
+
+                    <!-- Pul miqdori rejimi boshqaruvi -->
+                    <div id="riskMoneyControls" class="hidden">
+                        <div class="relative">
+                            <span id="riskMoneyPrefix" class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm">$</span>
+                            <input type="number" id="riskMoneyInput" value="10" min="0" step="any" placeholder="Masalan: 25"
+                                class="w-full rounded-xl bg-terminal-bg border border-terminal-border pl-9 pr-4 py-2.5 text-base font-extrabold text-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        </div>
+                        <p id="riskMoneyPercentHint" class="text-[11px] text-slate-400 mt-1.5">Bu depozitingizning 1.00% qismiga teng.</p>
+                    </div>
+
+                    <!-- Yuqori risk ogohlantirish banneri (> 3%) -->
+                    <div id="highRiskBanner" class="hidden mt-3 p-3 rounded-xl bg-rose-500/15 border border-rose-500/35 text-rose-300 text-xs flex items-start gap-2.5">
+                        <i class="fa-solid fa-triangle-exclamation text-rose-400 mt-0.5 shrink-0"></i>
+                        <span><strong>Diqqat: Yuqori risk!</strong> Professional treyderlar odatda bir bitimda 1–2% dan oshirmaydi.</span>
+                    </div>
+                </div>
+
+                <!-- 4. Ikki xil hisoblash rejimi (Tablar: Pip/Punkt vs Narx bo'yicha) -->
+                <div class="pt-3 border-t border-terminal-border">
+                    <div class="grid grid-cols-2 gap-1.5 p-1 rounded-xl bg-terminal-input border border-terminal-border mb-4">
+                        <button type="button" id="tabPipsMode" class="py-2.5 px-3 rounded-lg text-xs sm:text-sm font-bold bg-terminal-card text-emerald-400 shadow-sm flex items-center justify-center gap-2 transition-all">
+                            <i class="fa-solid fa-ruler-horizontal"></i>
+                            <span>Rejim 1: Pip / Punkt</span>
+                        </button>
+                        <button type="button" id="tabPriceMode" class="py-2.5 px-3 rounded-lg text-xs sm:text-sm font-bold text-slate-400 hover:text-slate-200 flex items-center justify-center gap-2 transition-all">
+                            <i class="fa-solid fa-crosshairs"></i>
+                            <span>Rejim 2: Narx bo'yicha</span>
+                        </button>
+                    </div>
+
+                    <!-- REJIM 1: Pip / Punkt bo'yicha -->
+                    <div id="pipsModePanel" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label for="stopLossPips" class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 flex items-center justify-between">
+                                <span>Stop-Loss <span class="text-rose-500">*</span></span>
+                                <span id="slUnitLabel1" class="text-[11px] font-medium lowercase text-slate-400">pip</span>
+                            </label>
+                            <div class="relative">
+                                <input type="number" id="stopLossPips" value="20" min="0.1" step="any" placeholder="20"
+                                    class="w-full rounded-xl bg-terminal-input border border-terminal-border px-4 py-3 text-base font-extrabold text-white focus:outline-none focus:ring-2 focus:ring-rose-500">
+                                <span class="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-rose-400 bg-rose-500/15 px-2 py-0.5 rounded">SL</span>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label for="takeProfitPips" class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 flex items-center justify-between">
+                                <span>Take-Profit</span>
+                                <span class="text-[11px] font-medium lowercase text-slate-500">ixtiyoriy</span>
+                            </label>
+                            <div class="relative">
+                                <input type="number" id="takeProfitPips" value="50" min="0" step="any" placeholder="50"
+                                    class="w-full rounded-xl bg-terminal-input border border-terminal-border px-4 py-3 text-base font-extrabold text-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                                <span class="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-emerald-400 bg-emerald-500/15 px-2 py-0.5 rounded">TP</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- REJIM 2: Narx bo'yicha (Entry / SL / TP Price) -->
+                    <div id="priceModePanel" class="hidden space-y-4">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-slate-400">Bitim yo'nalishi (avtomatik):</span>
+                            <span id="tradeDirectionBadge" class="px-2.5 py-1 rounded-md text-xs font-extrabold bg-emerald-500/15 text-emerald-400 border border-emerald-500/25">
+                                <i class="fa-solid fa-arrow-trend-up mr-1"></i> BUY (Long)
+                            </span>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div>
+                                <label for="entryPriceInput" class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                                    Kirish narxi (Entry) <span class="text-rose-500">*</span>
+                                </label>
+                                <input type="number" id="entryPriceInput" value="1.0850" step="any" placeholder="1.0850"
+                                    class="w-full rounded-xl bg-terminal-input border border-terminal-border px-3.5 py-2.5 text-sm font-extrabold text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+
+                            <div>
+                                <label for="slPriceInput" class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                                    Stop-Loss narxi <span class="text-rose-500">*</span>
+                                </label>
+                                <input type="number" id="slPriceInput" value="1.0830" step="any" placeholder="1.0830"
+                                    class="w-full rounded-xl bg-terminal-input border border-terminal-border px-3.5 py-2.5 text-sm font-extrabold text-white focus:outline-none focus:ring-2 focus:ring-rose-500">
+                            </div>
+
+                            <div>
+                                <label for="tpPriceInput" class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                                    Take-Profit narxi
+                                </label>
+                                <input type="number" id="tpPriceInput" value="1.0900" step="any" placeholder="1.0900"
+                                    class="w-full rounded-xl bg-terminal-input border border-terminal-border px-3.5 py-2.5 text-sm font-extrabold text-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                            </div>
+                        </div>
+
+                        <!-- Narxdan hisoblangan masofa ko'rsatkichi -->
+                        <div id="calculatedPipsSummary" class="flex flex-wrap items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl bg-terminal-input border border-terminal-border text-xs text-slate-300">
+                            <span>Hisoblangan SL: <strong id="calcSlPipsText" class="text-rose-400">20.0 pip</strong></span>
+                            <span>Hisoblangan TP: <strong id="calcTpPipsText" class="text-emerald-400">50.0 pip</strong></span>
+                        </div>
+
+                        <!-- Narx xatoligi ogohlantirishi -->
+                        <div id="priceValidationError" class="hidden p-3 rounded-xl bg-rose-500/15 border border-rose-500/35 text-rose-300 text-xs font-medium flex items-start gap-2">
+                            <i class="fa-solid fa-circle-exclamation text-rose-400 mt-0.5 shrink-0"></i>
+                            <span id="priceErrorText">Entry va Stop-Loss narxlari bir xil bo'lishi mumkin emas!</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 5. Qo'lda tahrirlash (Custom Pip Value Override) -->
+                <div class="pt-3 border-t border-terminal-border">
+                    <div class="flex flex-wrap items-center justify-between gap-3">
+                        <label for="pipValueOverride" class="text-xs font-semibold text-slate-400 flex items-center gap-1.5">
+                            <span>1.00 Lot uchun 1 pip/punkt qiymati ($):</span>
+                            <span class="group relative cursor-help">
+                                <i class="fa-regular fa-circle-question text-slate-500"></i>
+                                <span class="invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-opacity absolute bottom-full left-0 mb-2 w-64 p-2.5 rounded-lg bg-slate-800 text-slate-100 text-[11px] font-normal shadow-xl z-20 pointer-events-none border border-slate-700">
+                                    Tanlangan instrumentga qarab avtomatik hisoblanadi. Agar brokeringizda kontrakt o'lchami boshqacha bo'lsa, shu yerdan qo'lda o'zgartirishingiz mumkin.
+                                </span>
+                            </span>
+                        </label>
+                        <div class="relative w-32 shrink-0">
+                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">$</span>
+                            <input type="number" id="pipValueOverride" value="10.00" min="0.0001" step="any"
+                                class="w-full rounded-lg bg-terminal-input border border-terminal-border pl-7 pr-3 py-1.5 text-right text-xs font-extrabold text-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- O'NG USTUN: Natijalar va Simulyator Paneli (Outputs) -->
+            <div class="lg:col-span-5 space-y-5">
+
+                <!-- 1. Asosiy Karta: Tavsiya etilgan Lot -->
+                <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#0F172A] via-[#0D1322] to-[#060911] text-white p-6 border border-slate-800 shadow-2xl">
+                    <!-- Dekorativ nur -->
+                    <div class="absolute -right-14 -top-14 w-44 h-44 rounded-full bg-emerald-500/20 blur-3xl pointer-events-none"></div>
+                    <div class="absolute -left-14 -bottom-14 w-44 h-44 rounded-full bg-amber-500/10 blur-3xl pointer-events-none"></div>
+
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-xs font-bold uppercase tracking-wider text-emerald-400">Bitim hajmi (Tavsiya etilgan Lot)</span>
+                        <button id="copyLotBtn" class="px-3 py-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95">
+                            <i id="copyLotIcon" class="fa-regular fa-copy"></i>
+                            <span id="copyLotText">Nusxalash</span>
+                        </button>
+                    </div>
+
+                    <div class="flex items-baseline gap-2.5 my-2">
+                        <span id="standardLotOut" class="text-5xl sm:text-6xl font-black tracking-tight text-white">0.50</span>
+                        <span class="text-base font-bold text-slate-400">Standart Lot</span>
+                    </div>
+
+                    <p class="text-xs text-slate-400 mb-5">
+                        MetaTrader 4/5 yoki cTrader terminalida <strong>Volume</strong> maydoniga kiriting.
+                    </p>
+
+                    <!-- Mini, Micro va Units -->
+                    <div class="grid grid-cols-3 gap-2.5 pt-4 border-t border-slate-800/90">
+                        <div class="bg-white/[0.03] rounded-xl p-3 border border-white/5">
+                            <span class="block text-[11px] text-slate-400">Mini Lot (0.1)</span>
+                            <span id="miniLotOut" class="text-base sm:text-lg font-extrabold text-slate-100 mt-0.5 block">5.00</span>
+                        </div>
+                        <div class="bg-white/[0.03] rounded-xl p-3 border border-white/5">
+                            <span class="block text-[11px] text-slate-400">Micro Lot (0.01)</span>
+                            <span id="microLotOut" class="text-base sm:text-lg font-extrabold text-slate-100 mt-0.5 block">50.00</span>
+                        </div>
+                        <div class="bg-white/[0.03] rounded-xl p-3 border border-white/5">
+                            <span class="block text-[11px] text-slate-400">Birlik (Units)</span>
+                            <span id="unitsOut" class="text-base sm:text-lg font-extrabold text-emerald-400 mt-0.5 block truncate">50,000</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Yo'qotish miqdori va Kutilayotgan foyda -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <!-- Risk summasi -->
+                    <div class="bg-terminal-card rounded-2xl border border-terminal-border p-5 shadow-xl">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-bold text-slate-400">Yo'qotish miqdori (SL)</span>
+                            <div class="w-8 h-8 rounded-lg bg-rose-500/15 text-rose-400 flex items-center justify-center">
+                                <i class="fa-solid fa-shield-halved text-sm"></i>
+                            </div>
+                        </div>
+                        <div id="riskAmountOut" class="text-2xl font-extrabold text-rose-400 truncate">
+                            -$10.00
+                        </div>
+                        <p id="riskPercentSubOut" class="text-xs text-slate-400 mt-1">Depozitning 1.00% qismi</p>
+                    </div>
+
+                    <!-- Kutilayotgan foyda -->
+                    <div class="bg-terminal-card rounded-2xl border border-terminal-border p-5 shadow-xl">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-bold text-slate-400">Kutilayotgan foyda</span>
+                            <div class="w-8 h-8 rounded-lg bg-emerald-500/15 text-emerald-400 flex items-center justify-center">
+                                <i class="fa-solid fa-sack-dollar text-sm"></i>
+                            </div>
+                        </div>
+                        <div id="profitAmountOut" class="text-2xl font-extrabold text-emerald-400 truncate">
+                            +$25.00
+                        </div>
+                        <p id="profitPercentSubOut" class="text-xs text-slate-400 mt-1">Depozitga +2.50% o'sish</p>
+                    </div>
+                </div>
+
+                <!-- 3. Risk : Mukofot (R:R) Nisbati -->
+                <div class="bg-terminal-card rounded-2xl border border-terminal-border p-5 shadow-xl">
+                    <div class="flex items-center justify-between mb-3">
+                        <div>
+                            <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Risk : Mukofot (R:R)</span>
+                            <div class="flex items-center gap-2 mt-1">
+                                <span id="rrRatioOut" class="text-xl font-extrabold text-white">1 : 2.50</span>
+                                <span id="rrBadgeOut" class="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-500/15 text-emerald-400">
+                                    A'lo nisbat
+                                </span>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-[11px] text-slate-400 block">SL / TP masofasi</span>
+                            <span id="slTpDistanceOut" class="text-xs sm:text-sm font-extrabold text-slate-200">20 / 50 pip</span>
+                        </div>
+                    </div>
+
+                    <!-- Vizual Progress Bar -->
+                    <div class="w-full h-3 rounded-full bg-terminal-input overflow-hidden flex p-0.5 border border-terminal-border">
+                        <div id="rrRiskBar" class="bg-rose-500 h-full rounded-l-full transition-all duration-300" style="width: 28.57%"></div>
+                        <div id="rrRewardBar" class="bg-emerald-400 h-full rounded-r-full transition-all duration-300" style="width: 71.43%"></div>
+                    </div>
+                    <div class="flex justify-between text-[11px] font-medium text-slate-400 mt-1.5">
+                        <span>Risk (1R)</span>
+                        <span>Mukofot (<span id="rrRewardLabel">2.50R</span>)</span>
+                    </div>
+                </div>
+
+                <!-- 4. SIMULYATOR: Balansga ta'siri (What-If Simulator) -->
+                <div class="bg-terminal-card rounded-2xl border border-terminal-border p-5 shadow-xl space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-flask text-amber-400"></i>
+                            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-200">Balans Simulyatori (What-If)</h3>
+                        </div>
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/15 text-amber-400 border border-amber-500/20">
+                            Jonli ssenariy
+                        </span>
+                    </div>
+
+                    <!-- Agar SL ursa vs Agar TP ursa -->
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20">
+                            <span class="block text-[11px] text-rose-300 font-semibold">Agar SL ursa (Zarar):</span>
+                            <span id="simBalanceSlOut" class="text-sm sm:text-base font-extrabold text-white mt-0.5 block">$990.00</span>
+                            <span id="simSlDeltaOut" class="text-[11px] text-rose-400 font-medium">-1.00% balans</span>
+                        </div>
+                        <div class="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                            <span class="block text-[11px] text-emerald-300 font-semibold">Agar TP ursa (Foyda):</span>
+                            <span id="simBalanceTpOut" class="text-sm sm:text-base font-extrabold text-white mt-0.5 block">$1,025.00</span>
+                            <span id="simTpDeltaOut" class="text-[11px] text-emerald-400 font-medium">+2.50% balans</span>
+                        </div>
+                    </div>
+
+                    <!-- Ketma-ket 5 ta zararli bitim (Drawdown) simulyatori -->
+                    <div class="pt-3 border-t border-terminal-border">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-bold text-slate-300">Ketma-ket 5 ta Stop-Loss (Drawdown) testi:</span>
+                            <span id="drawdownRemainingPct" class="text-xs font-extrabold text-amber-400">95.1% qoladi</span>
+                        </div>
+
+                        <!-- 5 ta qadam mini jadvali -->
+                        <div id="drawdownStepsGrid" class="grid grid-cols-5 gap-1.5 text-center">
+                            <!-- JS orqali to'ldiriladi -->
+                        </div>
+                        <p id="drawdownSummaryNote" class="text-[11px] text-slate-400 mt-2 leading-relaxed">
+                            1.0% risk bilan ketma-ket 5 marta yutqazsangiz ham depozitingizning 95.10% qismi saqlanib qoladi.
+                        </p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <!-- Xabarnoma (Toast) -->
+    <div id="toast" class="fixed bottom-5 right-5 transform translate-y-24 opacity-0 transition-all duration-300 bg-emerald-600 text-white px-4 py-3 rounded-xl shadow-2xl text-xs sm:text-sm font-bold flex items-center gap-2 z-50">
+        <i class="fa-solid fa-circle-check"></i>
+        <span id="toastMsg">Nusxalandi!</span>
+    </div>
+
+    <script>
+        // =========================================================================
+        // 1. INSTRUMENTLAR MA'LUMOTLAR BAZASI (100% ANIQ SPETSIFIKATSIYALAR)
+        // =========================================================================
+        const INSTRUMENTS = {
+            // Forex Major (XXX/USD)
+            'EUR/USD': {
+                category: 'major',
+                contractSize: 100000,
+                pipSize: 0.0001,
+                defaultPipValue: 10.00,
+                unitLabel: 'pip',
+                sampleEntry: 1.0850,
+                sampleSL: 1.0830,
+                sampleTP: 1.0900,
+                specText: '1 Lot = 100,000 birlik',
+                note: 'Forex Major: 1 pip = 0.0001. 1.00 Standart Lotda 1 pip harakat = $10.00.'
+            },
+            'GBP/USD': {
+                category: 'major',
+                contractSize: 100000,
+                pipSize: 0.0001,
+                defaultPipValue: 10.00,
+                unitLabel: 'pip',
+                sampleEntry: 1.2750,
+                sampleSL: 1.2730,
+                sampleTP: 1.2800,
+                specText: '1 Lot = 100,000 birlik',
+                note: 'Forex Major: 1 pip = 0.0001. 1.00 Standart Lotda 1 pip harakat = $10.00.'
+            },
+            'AUD/USD': {
+                category: 'major',
+                contractSize: 100000,
+                pipSize: 0.0001,
+                defaultPipValue: 10.00,
+                unitLabel: 'pip',
+                sampleEntry: 0.6650,
+                sampleSL: 0.6630,
+                sampleTP: 0.6700,
+                specText: '1 Lot = 100,000 birlik',
+                note: 'Forex Major: 1 pip = 0.0001. 1.00 Standart Lotda 1 pip harakat = $10.00.'
+            },
+            'NZD/USD': {
+                category: 'major',
+                contractSize: 100000,
+                pipSize: 0.0001,
+                defaultPipValue: 10.00,
+                unitLabel: 'pip',
+                sampleEntry: 0.6120,
+                sampleSL: 0.6100,
+                sampleTP: 0.6170,
+                specText: '1 Lot = 100,000 birlik',
+                note: 'Forex Major: 1 pip = 0.0001. 1.00 Standart Lotda 1 pip harakat = $10.00.'
+            },
+            'USD/CHF': {
+                category: 'usd_base',
+                contractSize: 100000,
+                pipSize: 0.0001,
+                defaultQuoteRate: 0.8800,
+                quoteLabel: 'Joriy USD/CHF kursi (1 Pip qiymati uchun):',
+                unitLabel: 'pip',
+                sampleEntry: 0.8800,
+                sampleSL: 0.8780,
+                sampleTP: 0.8850,
+                specText: '1 Lot = 100,000 USD',
+                note: 'USD/CHF: 1 pip = 0.0001. 1 Pip qiymati = 10 / USDCHF kursi (0.8800 da ≈ $11.36).'
+            },
+            'USD/CAD': {
+                category: 'usd_base',
+                contractSize: 100000,
+                pipSize: 0.0001,
+                defaultQuoteRate: 1.3800,
+                quoteLabel: 'Joriy USD/CAD kursi (1 Pip qiymati uchun):',
+                unitLabel: 'pip',
+                sampleEntry: 1.3800,
+                sampleSL: 1.3780,
+                sampleTP: 1.3850,
+                specText: '1 Lot = 100,000 USD',
+                note: 'USD/CAD: 1 pip = 0.0001. 1 Pip qiymati = 10 / USDCAD kursi (1.3800 da ≈ $7.25).'
+            },
+
+            // Forex JPY (1000 / USDJPY_kurs)
+            'USD/JPY': {
+                category: 'jpy',
+                contractSize: 100000,
+                pipSize: 0.01,
+                defaultQuoteRate: 150.00,
+                quoteLabel: 'Joriy USD/JPY kursi (1 Pip qiymati uchun):',
+                unitLabel: 'pip',
+                sampleEntry: 150.00,
+                sampleSL: 149.80,
+                sampleTP: 150.50,
+                specText: '1 Lot = 100,000 USD',
+                note: 'JPY juftligi: 1 pip = 0.01. 1 Pip qiymati = 1000 / USDJPY kursi (150.00 da ≈ $6.67).'
+            },
+            'EUR/JPY': {
+                category: 'jpy',
+                contractSize: 100000,
+                pipSize: 0.01,
+                defaultQuoteRate: 150.00,
+                quoteLabel: 'Joriy USD/JPY kursi (1 Pip qiymati uchun):',
+                unitLabel: 'pip',
+                sampleEntry: 162.50,
+                sampleSL: 162.30,
+                sampleTP: 163.00,
+                specText: '1 Lot = 100,000 EUR',
+                note: 'JPY juftligi: 1 pip = 0.01. 1 Pip qiymati USD/JPY kursiga bog‘liq (1000 / USDJPY).'
+            },
+            'GBP/JPY': {
+                category: 'jpy',
+                contractSize: 100000,
+                pipSize: 0.01,
+                defaultQuoteRate: 150.00,
+                quoteLabel: 'Joriy USD/JPY kursi (1 Pip qiymati uchun):',
+                unitLabel: 'pip',
+                sampleEntry: 191.00,
+                sampleSL: 190.80,
+                sampleTP: 191.50,
+                specText: '1 Lot = 100,000 GBP',
+                note: 'JPY juftligi: 1 pip = 0.01. 1 Pip qiymati USD/JPY kursiga bog‘liq (1000 / USDJPY).'
+            },
+
+            // Oltin va Kumush
+            'XAU/USD': {
+                category: 'metal',
+                contractSize: 100,
+                pipSize: 0.1,
+                defaultPipValue: 10.00,
+                unitLabel: 'pip ($0.10)',
+                sampleEntry: 2650.00,
+                sampleSL: 2645.00,
+                sampleTP: 2662.50,
+                specText: '1 Lot = 100 oz (unsiya)',
+                note: 'Oltin (XAU/USD): 1 pip = $0.10 harakat ($1.00 harakat = 10 pip). 1.00 Lotda 1 pip = $10.00.'
+            },
+            'XAG/USD': {
+                category: 'metal',
+                contractSize: 5000,
+                pipSize: 0.01,
+                defaultPipValue: 50.00,
+                unitLabel: 'pip ($0.01)',
+                sampleEntry: 31.50,
+                sampleSL: 31.30,
+                sampleTP: 32.00,
+                specText: '1 Lot = 5,000 oz (unsiya)',
+                note: 'Kumush (XAG/USD): 1 pip = $0.01 harakat. 1.00 Lotda 1 pip = $50.00.'
+            },
+
+            // Indekslar
+            'US30': {
+                category: 'index',
+                contractSize: 1,
+                pipSize: 1.0,
+                defaultPipValue: 1.00,
+                unitLabel: 'punkt ($1)',
+                sampleEntry: 43500,
+                sampleSL: 43450,
+                sampleTP: 43625,
+                specText: '1 Lot = 1 kontrakt ($1/pt)',
+                note: 'US30 (Dow Jones): 1 punkt = 1.0 narx harakati. 1.00 Lotda 1 punkt = $1.00.'
+            },
+            'NAS100': {
+                category: 'index',
+                contractSize: 1,
+                pipSize: 1.0,
+                defaultPipValue: 1.00,
+                unitLabel: 'punkt ($1)',
+                sampleEntry: 20500,
+                sampleSL: 20460,
+                sampleTP: 20600,
+                specText: '1 Lot = 1 kontrakt ($1/pt)',
+                note: 'NAS100 (Nasdaq): 1 punkt = 1.0 narx harakati. 1.00 Lotda 1 punkt = $1.00.'
+            },
+            'SPX500': {
+                category: 'index',
+                contractSize: 1,
+                pipSize: 1.0,
+                defaultPipValue: 1.00,
+                unitLabel: 'punkt ($1)',
+                sampleEntry: 5850,
+                sampleSL: 5835,
+                sampleTP: 5890,
+                specText: '1 Lot = 1 kontrakt ($1/pt)',
+                note: 'SPX500 (S&P 500): 1 punkt = 1.0 narx harakati. 1.00 Lotda 1 punkt = $1.00.'
+            },
+
+            // Kriptovalyutalar
+            'BTC/USD': {
+                category: 'crypto',
+                contractSize: 1,
+                pipSize: 1.0,
+                defaultPipValue: 1.00,
+                unitLabel: 'punkt ($1)',
+                sampleEntry: 90000,
+                sampleSL: 89500,
+                sampleTP: 91250,
+                specText: '1 Lot = 1 BTC ($1/pt)',
+                note: 'Bitcoin (BTC/USD): 1 punkt = $1.00 harakat. 1.00 Lotda $1 harakat = $1.00.'
+            },
+            'ETH/USD': {
+                category: 'crypto',
+                contractSize: 1,
+                pipSize: 1.0,
+                defaultPipValue: 1.00,
+                unitLabel: 'punkt ($1)',
+                sampleEntry: 3100,
+                sampleSL: 3070,
+                sampleTP: 3175,
+                specText: '1 Lot = 1 ETH ($1/pt)',
+                note: 'Ethereum (ETH/USD): 1 punkt = $1.00 harakat. 1.00 Lotda $1 harakat = $1.00.'
+            },
+
+            // Maxsus (Qo'lda kiritish)
+            'CUSTOM': {
+                category: 'custom',
+                contractSize: 100000,
+                pipSize: 0.0001,
+                defaultPipValue: 10.00,
+                unitLabel: 'pip/punkt',
+                sampleEntry: 1.0000,
+                sampleSL: 0.9980,
+                sampleTP: 1.0050,
+                specText: "Qo'lda sozlash",
+                note: "Maxsus rejim: Pastdagi '1.00 Lot uchun 1 pip/punkt qiymati ($)' maydoniga brokeringiz shartini kiriting."
+            }
+        };
+
+        // =========================================================================
+        // 2. ILOVA HOLATI (STATE) VA LOCALSTORAGE BOSHQARUVI
+        // =========================================================================
+        const STORAGE_KEY = 'universal_forex_simulator_uz_v1';
+
+        const defaultState = {
+            instrument: 'EUR/USD',
+            accountCurrency: 'USD',
+            accountBalance: 1000,
+            usdToUzsRate: 12850,
+            eurToUsdRate: 1.08,
+            pairQuoteRate: 150.00,
+            riskMode: 'percent', // 'percent' yoki 'money'
+            riskPercent: 1.0,
+            riskMoney: 10.0,
+            calcMode: 'pips', // 'pips' yoki 'price'
+            stopLossPips: 20,
+            takeProfitPips: 50,
+            entryPrice: 1.0850,
+            slPrice: 1.0830,
+            tpPrice: 1.0900,
+            customPipValue: null
+        };
+
+        let state = { ...defaultState };
+
+        function loadState() {
+            try {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    state = { ...defaultState, ...parsed };
+                    if (!INSTRUMENTS[state.instrument]) {
+                        state.instrument = 'EUR/USD';
+                    }
+                }
+            } catch (e) {
+                // Storage bloklangan bo'lsa jim davom etish
+            }
+        }
+
+        function saveState() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+            } catch (e) {
+                // Storage bloklangan bo'lsa jim davom etish
+            }
+        }
+
+        // =========================================================================
+        // 3. DOM ELEMENTLARI
+        // =========================================================================
+        const els = {
+            instrumentSelect: document.getElementById('instrumentSelect'),
+            instrumentSpecBadge: document.getElementById('instrumentSpecBadge'),
+            instrumentNoteText: document.getElementById('instrumentNoteText'),
+            accountCurrency: document.getElementById('accountCurrency'),
+            accountBalance: document.getElementById('accountBalance'),
+            balancePrefix: document.getElementById('balancePrefix'),
+            dynamicRateContainer: document.getElementById('dynamicRateContainer'),
+            accountRateWrapper: document.getElementById('accountRateWrapper'),
+            accountRateLabel: document.getElementById('accountRateLabel'),
+            accountExchangeRate: document.getElementById('accountExchangeRate'),
+            pairQuoteRateWrapper: document.getElementById('pairQuoteRateWrapper'),
+            pairQuoteRateLabel: document.getElementById('pairQuoteRateLabel'),
+            pairQuoteRate: document.getElementById('pairQuoteRate'),
+
+            // Risk
+            riskStatusBadge: document.getElementById('riskStatusBadge'),
+            riskModePercentBtn: document.getElementById('riskModePercentBtn'),
+            riskModeMoneyBtn: document.getElementById('riskModeMoneyBtn'),
+            riskMoneyBtnSymbol: document.getElementById('riskMoneyBtnSymbol'),
+            riskPercentControls: document.getElementById('riskPercentControls'),
+            riskSlider: document.getElementById('riskSlider'),
+            riskPercentInput: document.getElementById('riskPercentInput'),
+            riskPresetBtns: document.querySelectorAll('.risk-preset-btn'),
+            riskMoneyControls: document.getElementById('riskMoneyControls'),
+            riskMoneyPrefix: document.getElementById('riskMoneyPrefix'),
+            riskMoneyInput: document.getElementById('riskMoneyInput'),
+            riskMoneyPercentHint: document.getElementById('riskMoneyPercentHint'),
+            highRiskBanner: document.getElementById('highRiskBanner'),
+
+            // Hisoblash rejimlari
+            tabPipsMode: document.getElementById('tabPipsMode'),
+            tabPriceMode: document.getElementById('tabPriceMode'),
+            pipsModePanel: document.getElementById('pipsModePanel'),
+            priceModePanel: document.getElementById('priceModePanel'),
+            slUnitLabel1: document.getElementById('slUnitLabel1'),
+            stopLossPips: document.getElementById('stopLossPips'),
+            takeProfitPips: document.getElementById('takeProfitPips'),
+
+            // Narx rejimi
+            tradeDirectionBadge: document.getElementById('tradeDirectionBadge'),
+            entryPriceInput: document.getElementById('entryPriceInput'),
+            slPriceInput: document.getElementById('slPriceInput'),
+            tpPriceInput: document.getElementById('tpPriceInput'),
+            calcSlPipsText: document.getElementById('calcSlPipsText'),
+            calcTpPipsText: document.getElementById('calcTpPipsText'),
+            priceValidationError: document.getElementById('priceValidationError'),
+            priceErrorText: document.getElementById('priceErrorText'),
+
+            // Pip qiymati override
+            pipValueOverride: document.getElementById('pipValueOverride'),
+
+            // Natijalar
+            standardLotOut: document.getElementById('standardLotOut'),
+            miniLotOut: document.getElementById('miniLotOut'),
+            microLotOut: document.getElementById('microLotOut'),
+            unitsOut: document.getElementById('unitsOut'),
+            riskAmountOut: document.getElementById('riskAmountOut'),
+            riskPercentSubOut: document.getElementById('riskPercentSubOut'),
+            profitAmountOut: document.getElementById('profitAmountOut'),
+            profitPercentSubOut: document.getElementById('profitPercentSubOut'),
+            rrRatioOut: document.getElementById('rrRatioOut'),
+            rrBadgeOut: document.getElementById('rrBadgeOut'),
+            slTpDistanceOut: document.getElementById('slTpDistanceOut'),
+            rrRiskBar: document.getElementById('rrRiskBar'),
+            rrRewardBar: document.getElementById('rrRewardBar'),
+            rrRewardLabel: document.getElementById('rrRewardLabel'),
+
+            // Simulyator elementlari
+            simBalanceSlOut: document.getElementById('simBalanceSlOut'),
+            simSlDeltaOut: document.getElementById('simSlDeltaOut'),
+            simBalanceTpOut: document.getElementById('simBalanceTpOut'),
+            simTpDeltaOut: document.getElementById('simTpDeltaOut'),
+            drawdownRemainingPct: document.getElementById('drawdownRemainingPct'),
+            drawdownStepsGrid: document.getElementById('drawdownStepsGrid'),
+            drawdownSummaryNote: document.getElementById('drawdownSummaryNote'),
+
+            // Boshqa tugmalar
+            copyLotBtn: document.getElementById('copyLotBtn'),
+            copyLotIcon: document.getElementById('copyLotIcon'),
+            copyLotText: document.getElementById('copyLotText'),
+            resetBtn: document.getElementById('resetBtn')
+        };
+
+        // =========================================================================
+        // 4. YORDAMCHI FUNKSIYALAR
+        // =========================================================================
+        const CURRENCY_SYMBOLS = { USD: '$', EUR: '€', UZS: "so'm" };
+
+        function safeNumber(val, fallback = 0) {
+            const num = parseFloat(val);
+            return (Number.isFinite(num) && !Number.isNaN(num)) ? num : fallback;
+        }
+
+        function formatMoney(amount, currency) {
+            if (!Number.isFinite(amount) || Number.isNaN(amount)) amount = 0;
+            if (currency === 'UZS') {
+                return Math.round(amount).toLocaleString('ru-RU') + " so'm";
+            }
+            const sym = CURRENCY_SYMBOLS[currency] || '$';
+            return sym + amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        function formatCompactMoney(amount, currency) {
+            if (!Number.isFinite(amount) || Number.isNaN(amount)) amount = 0;
+            if (currency === 'UZS') {
+                if (amount >= 1000000) return (amount / 1000000).toFixed(2) + 'M';
+                if (amount >= 1000) return Math.round(amount / 1000) + 'K';
+                return Math.round(amount).toString();
+            }
+            const sym = CURRENCY_SYMBOLS[currency] || '$';
+            return sym + Math.round(amount).toLocaleString('en-US');
+        }
+
+        function computeAutoPipValueUSD(instKey, quoteRate) {
+            const inst = INSTRUMENTS[instKey];
+            if (!inst) return 10.00;
+
+            if (inst.category === 'jpy') {
+                const rate = quoteRate > 0 ? quoteRate : (inst.defaultQuoteRate || 150.0);
+                return 1000 / rate;
+            }
+            if (inst.category === 'usd_base') {
+                const rate = quoteRate > 0 ? quoteRate : (inst.defaultQuoteRate || 1.0);
+                return 10 / rate;
+            }
+            return inst.defaultPipValue || 10.00;
+        }
+
+        function syncUIWithState() {
+            els.instrumentSelect.value = state.instrument;
+            els.accountCurrency.value = state.accountCurrency;
+            els.accountBalance.value = state.accountBalance;
+            els.pairQuoteRate.value = state.pairQuoteRate;
+
+            if (state.accountCurrency === 'UZS') {
+                els.accountExchangeRate.value = state.usdToUzsRate;
+            } else if (state.accountCurrency === 'EUR') {
+                els.accountExchangeRate.value = state.eurToUsdRate;
+            }
+
+            els.riskPercentInput.value = state.riskPercent;
+            els.riskSlider.value = Math.min(10, Math.max(0.1, state.riskPercent));
+            els.riskMoneyInput.value = state.riskMoney;
+
+            els.stopLossPips.value = state.stopLossPips;
+            els.takeProfitPips.value = state.takeProfitPips;
+            els.entryPriceInput.value = state.entryPrice;
+            els.slPriceInput.value = state.slPrice;
+            els.tpPriceInput.value = state.tpPrice;
+
+            updateRiskModeUI();
+            updateCalcModeUI();
+            updateInstrumentDetailsUI(false);
+        }
+
+        function updateInstrumentDetailsUI(resetSamplePrices = true) {
+            const inst = INSTRUMENTS[state.instrument];
+            if (!inst) return;
+
+            els.instrumentSpecBadge.textContent = inst.specText;
+            els.instrumentNoteText.textContent = inst.note;
+            els.slUnitLabel1.textContent = inst.unitLabel;
+
+            const needsQuoteRate = (inst.category === 'jpy' || inst.category === 'usd_base');
+            const needsAccountRate = (state.accountCurrency === 'UZS' || state.accountCurrency === 'EUR');
+
+            if (needsQuoteRate || needsAccountRate) {
+                els.dynamicRateContainer.classList.remove('hidden');
+                els.dynamicRateContainer.classList.add('grid');
+            } else {
+                els.dynamicRateContainer.classList.add('hidden');
+                els.dynamicRateContainer.classList.remove('grid');
+            }
+
+            if (needsAccountRate) {
+                els.accountRateWrapper.classList.remove('hidden');
+                if (state.accountCurrency === 'UZS') {
+                    els.accountRateLabel.textContent = '1 USD kursi (UZS so‘mda):';
+                    els.accountExchangeRate.value = state.usdToUzsRate;
+                } else {
+                    els.accountRateLabel.textContent = '1 EUR kursi (USD da):';
+                    els.accountExchangeRate.value = state.eurToUsdRate;
+                }
+            } else {
+                els.accountRateWrapper.classList.add('hidden');
+            }
+
+            if (needsQuoteRate) {
+                els.pairQuoteRateWrapper.classList.remove('hidden');
+                els.pairQuoteRateLabel.textContent = inst.quoteLabel;
+                if (resetSamplePrices) {
+                    state.pairQuoteRate = inst.defaultQuoteRate;
+                    els.pairQuoteRate.value = inst.defaultQuoteRate;
+                }
+            } else {
+                els.pairQuoteRateWrapper.classList.add('hidden');
+            }
+
+            if (resetSamplePrices) {
+                state.entryPrice = inst.sampleEntry;
+                state.slPrice = inst.sampleSL;
+                state.tpPrice = inst.sampleTP;
+                els.entryPriceInput.value = inst.sampleEntry;
+                els.slPriceInput.value = inst.sampleSL;
+                els.tpPriceInput.value = inst.sampleTP;
+                state.customPipValue = null;
+            }
+
+            const activePipVal = (state.customPipValue !== null && state.customPipValue > 0)
+                ? state.customPipValue
+                : computeAutoPipValueUSD(state.instrument, state.pairQuoteRate);
+
+            els.pipValueOverride.value = activePipVal.toFixed(2);
+            if (inst.category === 'custom') {
+                els.pipValueOverride.focus();
+            }
+        }
+
+        function updateRiskModeUI() {
+            const sym = CURRENCY_SYMBOLS[state.accountCurrency] || '$';
+            els.riskMoneyBtnSymbol.textContent = sym;
+            els.riskMoneyPrefix.textContent = (state.accountCurrency === 'UZS') ? 'UZS' : sym;
+
+            if (state.riskMode === 'percent') {
+                els.riskModePercentBtn.className = 'px-2.5 py-1 rounded-md text-xs font-bold bg-terminal-card text-emerald-400 shadow-sm transition-all';
+                els.riskModeMoneyBtn.className = 'px-2.5 py-1 rounded-md text-xs font-bold text-slate-400 hover:text-slate-200 transition-all';
+                els.riskPercentControls.classList.remove('hidden');
+                els.riskMoneyControls.classList.add('hidden');
+            } else {
+                els.riskModeMoneyBtn.className = 'px-2.5 py-1 rounded-md text-xs font-bold bg-terminal-card text-emerald-400 shadow-sm transition-all';
+                els.riskModePercentBtn.className = 'px-2.5 py-1 rounded-md text-xs font-bold text-slate-400 hover:text-slate-200 transition-all';
+                els.riskMoneyControls.classList.remove('hidden');
+                els.riskPercentControls.classList.add('hidden');
+            }
+        }
+
+        function updateCalcModeUI() {
+            if (state.calcMode === 'pips') {
+                els.tabPipsMode.className = 'py-2.5 px-3 rounded-lg text-xs sm:text-sm font-bold bg-terminal-card text-emerald-400 shadow-sm flex items-center justify-center gap-2 transition-all';
+                els.tabPriceMode.className = 'py-2.5 px-3 rounded-lg text-xs sm:text-sm font-bold text-slate-400 hover:text-slate-200 flex items-center justify-center gap-2 transition-all';
+                els.pipsModePanel.classList.remove('hidden');
+                els.priceModePanel.classList.add('hidden');
+            } else {
+                els.tabPriceMode.className = 'py-2.5 px-3 rounded-lg text-xs sm:text-sm font-bold bg-terminal-card text-emerald-400 shadow-sm flex items-center justify-center gap-2 transition-all';
+                els.tabPipsMode.className = 'py-2.5 px-3 rounded-lg text-xs sm:text-sm font-bold text-slate-400 hover:text-slate-200 flex items-center justify-center gap-2 transition-all';
+                els.priceModePanel.classList.remove('hidden');
+                els.pipsModePanel.classList.add('hidden');
+            }
+        }
+
+        // =========================================================================
+        // 5. ASOSIY HISOBLASH VA SIMULYATSIYA MANTIQI
+        // =========================================================================
+        function calculateAll() {
+            const inst = INSTRUMENTS[state.instrument];
+            const currency = state.accountCurrency;
+            const balance = Math.max(0, safeNumber(els.accountBalance.value, 0));
+            state.accountBalance = balance;
+
+            if (currency === 'UZS') {
+                els.balancePrefix.textContent = 'UZS';
+                els.balancePrefix.classList.replace('text-sm', 'text-xs');
+            } else {
+                els.balancePrefix.textContent = CURRENCY_SYMBOLS[currency];
+                els.balancePrefix.classList.replace('text-xs', 'text-sm');
+            }
+
+            // 1. Risk summasi va foizini aniqlash
+            let riskAmountInAccountCurrency = 0;
+            let effectiveRiskPercent = 0;
+
+            if (state.riskMode === 'percent') {
+                const rPct = Math.max(0, safeNumber(els.riskPercentInput.value, 0));
+                state.riskPercent = rPct;
+                effectiveRiskPercent = rPct;
+                riskAmountInAccountCurrency = balance * (rPct / 100);
+                state.riskMoney = riskAmountInAccountCurrency;
+                els.riskMoneyInput.value = riskAmountInAccountCurrency.toFixed(2);
+            } else {
+                const rMoney = Math.max(0, safeNumber(els.riskMoneyInput.value, 0));
+                state.riskMoney = rMoney;
+                riskAmountInAccountCurrency = rMoney;
+                effectiveRiskPercent = (balance > 0) ? (rMoney / balance) * 100 : 0;
+                state.riskPercent = effectiveRiskPercent;
+                els.riskMoneyPercentHint.textContent = `Bu depozitingizning ${effectiveRiskPercent.toFixed(2)}% qismiga teng.`;
+            }
+
+            // Preset tugmalarini belgilash
+            els.riskPresetBtns.forEach(btn => {
+                const val = parseFloat(btn.dataset.risk);
+                if (state.riskMode === 'percent' && Math.abs(val - effectiveRiskPercent) < 0.001) {
+                    btn.className = 'risk-preset-btn px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-500 text-white border border-emerald-500 transition-all';
+                } else {
+                    btn.className = 'risk-preset-btn px-2.5 py-1 rounded-lg text-xs font-bold bg-terminal-bg border border-terminal-border hover:border-emerald-500 transition-all';
+                }
+            });
+
+            // Risk darajasi indikatori va ogohlantirish (> 3%)
+            if (effectiveRiskPercent <= 1.5) {
+                els.riskStatusBadge.textContent = 'Xavfsiz (Konservativ)';
+                els.riskStatusBadge.className = 'px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-500/15 text-emerald-400';
+                els.highRiskBanner.classList.add('hidden');
+            } else if (effectiveRiskPercent <= 3.0) {
+                els.riskStatusBadge.textContent = "O'rtacha risk";
+                els.riskStatusBadge.className = 'px-2 py-0.5 rounded text-[11px] font-bold bg-amber-500/15 text-amber-400';
+                els.highRiskBanner.classList.add('hidden');
+            } else {
+                els.riskStatusBadge.textContent = 'Yuqori risk!';
+                els.riskStatusBadge.className = 'px-2 py-0.5 rounded text-[11px] font-bold bg-rose-500/15 text-rose-400 animate-pulse';
+                els.highRiskBanner.classList.remove('hidden');
+            }
+
+            // 2. Risk summasini USD ga o'girish (Lot formulasi uchun)
+            let riskAmountUSD = riskAmountInAccountCurrency;
+            if (currency === 'EUR') {
+                const eurRate = Math.max(0.0001, safeNumber(els.accountExchangeRate.value, 1.08));
+                state.eurToUsdRate = eurRate;
+                riskAmountUSD = riskAmountInAccountCurrency * eurRate;
+            } else if (currency === 'UZS') {
+                const uzsRate = Math.max(1, safeNumber(els.accountExchangeRate.value, 12850));
+                state.usdToUzsRate = uzsRate;
+                riskAmountUSD = riskAmountInAccountCurrency / uzsRate;
+            }
+
+            // 3. Stop-Loss va Take-Profit pip masofalarini aniqlash
+            let slPips = 0;
+            let tpPips = 0;
+            let hasPriceError = false;
+
+            if (state.calcMode === 'pips') {
+                slPips = Math.max(0, safeNumber(els.stopLossPips.value, 0));
+                tpPips = Math.max(0, safeNumber(els.takeProfitPips.value, 0));
+                state.stopLossPips = slPips;
+                state.takeProfitPips = tpPips;
+            } else {
+                const entry = safeNumber(els.entryPriceInput.value, 0);
+                const slPrice = safeNumber(els.slPriceInput.value, 0);
+                const tpPrice = safeNumber(els.tpPriceInput.value, 0);
+                state.entryPrice = entry;
+                state.slPrice = slPrice;
+                state.tpPrice = tpPrice;
+
+                if (entry <= 0 || slPrice <= 0) {
+                    hasPriceError = true;
+                    els.priceErrorText.textContent = "Kirish (Entry) va Stop-Loss narxlarini 0 dan katta qiymatda kiriting.";
+                } else if (entry === slPrice) {
+                    hasPriceError = true;
+                    els.priceErrorText.textContent = "Entry va Stop-Loss narxlari bir xil bo'lishi mumkin emas!";
+                } else {
+                    const isBuy = entry > slPrice;
+                    if (isBuy) {
+                        els.tradeDirectionBadge.innerHTML = '<i class="fa-solid fa-arrow-trend-up mr-1"></i> BUY (Long)';
+                        els.tradeDirectionBadge.className = 'px-2.5 py-1 rounded-md text-xs font-extrabold bg-emerald-500/15 text-emerald-400 border border-emerald-500/25';
+                    } else {
+                        els.tradeDirectionBadge.innerHTML = '<i class="fa-solid fa-arrow-trend-down mr-1"></i> SELL (Short)';
+                        els.tradeDirectionBadge.className = 'px-2.5 py-1 rounded-md text-xs font-extrabold bg-rose-500/15 text-rose-400 border border-rose-500/25';
+                    }
+
+                    slPips = Math.abs(entry - slPrice) / inst.pipSize;
+
+                    if (tpPrice > 0) {
+                        if ((isBuy && tpPrice <= entry) || (!isBuy && tpPrice >= entry)) {
+                            hasPriceError = true;
+                            els.priceErrorText.textContent = isBuy
+                                ? "BUY bitimda Take-Profit narxi Kirish narxidan yuqori bo'lishi kerak!"
+                                : "SELL bitimda Take-Profit narxi Kirish narxidan past bo'lishi kerak!";
+                            tpPips = 0;
+                        } else {
+                            tpPips = Math.abs(tpPrice - entry) / inst.pipSize;
+                        }
+                    } else {
+                        tpPips = 0;
+                    }
+                }
+
+                if (hasPriceError) {
+                    els.priceValidationError.classList.remove('hidden');
+                } else {
+                    els.priceValidationError.classList.add('hidden');
+                }
+
+                els.calcSlPipsText.textContent = `${slPips.toFixed(1)} ${inst.unitLabel}`;
+                els.calcTpPipsText.textContent = `${tpPips.toFixed(1)} ${inst.unitLabel}`;
+            }
+
+            // 4. 1 Pip qiymatini ($) olish
+            const pipValueUSD = Math.max(0.0001, safeNumber(els.pipValueOverride.value, 10));
+
+            // 5. Standart Lotni hisoblash: Lot = Risk ($) / (SL_Pip * Pip_Qiymati)
+            let standardLot = 0;
+            if (!hasPriceError && slPips > 0 && pipValueUSD > 0 && riskAmountUSD > 0) {
+                standardLot = riskAmountUSD / (slPips * pipValueUSD);
+            }
+
+            const miniLot = standardLot * 10;
+            const microLot = standardLot * 100;
+            const units = Math.round(standardLot * inst.contractSize);
+
+            els.standardLotOut.textContent = standardLot.toFixed(2);
+            els.miniLotOut.textContent = miniLot.toFixed(2);
+            els.microLotOut.textContent = microLot.toFixed(2);
+            els.unitsOut.textContent = units.toLocaleString('en-US');
+
+            // Risk summasini ekranga chiqarish
+            els.riskAmountOut.textContent = '-' + formatMoney(riskAmountInAccountCurrency, currency);
+            els.riskPercentSubOut.textContent = `Depozitning ${effectiveRiskPercent.toFixed(2)}% qismi`;
+
+            // 6. Kutilayotgan foyda va Risk : Mukofot (R:R)
+            let potentialProfit = 0;
+            let profitPct = 0;
+
+            if (!hasPriceError && slPips > 0 && tpPips > 0) {
+                const rrRatio = tpPips / slPips;
+                potentialProfit = riskAmountInAccountCurrency * rrRatio;
+                profitPct = effectiveRiskPercent * rrRatio;
+
+                els.profitAmountOut.textContent = '+' + formatMoney(potentialProfit, currency);
+                els.profitPercentSubOut.textContent = `Depozitga +${profitPct.toFixed(2)}% o'sish`;
+
+                els.rrRatioOut.textContent = `1 : ${rrRatio.toFixed(2)}`;
+                els.slTpDistanceOut.textContent = `${slPips.toFixed(1)} / ${tpPips.toFixed(1)} pip`;
+                els.rrRewardLabel.textContent = `${rrRatio.toFixed(2)}R`;
+
+                const totalParts = 1 + rrRatio;
+                els.rrRiskBar.style.width = `${(1 / totalParts) * 100}%`;
+                els.rrRewardBar.style.width = `${(rrRatio / totalParts) * 100}%`;
+
+                if (rrRatio >= 2.0) {
+                    els.rrBadgeOut.textContent = "A'lo nisbat";
+                    els.rrBadgeOut.className = 'px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-500/15 text-emerald-400';
+                } else if (rrRatio >= 1.0) {
+                    els.rrBadgeOut.textContent = "Qoniqarli";
+                    els.rrBadgeOut.className = 'px-2 py-0.5 rounded text-[11px] font-bold bg-amber-500/15 text-amber-400';
+                } else {
+                    els.rrBadgeOut.textContent = "Past nisbat";
+                    els.rrBadgeOut.className = 'px-2 py-0.5 rounded text-[11px] font-bold bg-rose-500/15 text-rose-400';
+                }
+            } else {
+                els.profitAmountOut.textContent = formatMoney(0, currency);
+                els.profitPercentSubOut.textContent = "Take-Profit kiritilmagan";
+                els.rrRatioOut.textContent = "—";
+                els.slTpDistanceOut.textContent = `${slPips.toFixed(1)} / 0 pip`;
+                els.rrRewardLabel.textContent = "0R";
+                els.rrRiskBar.style.width = "100%";
+                els.rrRewardBar.style.width = "0%";
+                els.rrBadgeOut.textContent = "TP kiritilmagan";
+                els.rrBadgeOut.className = 'px-2 py-0.5 rounded text-[11px] font-bold bg-slate-500/15 text-slate-400';
+            }
+
+            // 7. SIMULYATOR: Balans ta'siri (What-If) va 5 ta ketma-ket zarar (Drawdown)
+            const balanceAfterSL = Math.max(0, balance - riskAmountInAccountCurrency);
+            const balanceAfterTP = balance + potentialProfit;
+
+            els.simBalanceSlOut.textContent = formatMoney(balanceAfterSL, currency);
+            els.simSlDeltaOut.textContent = `-${effectiveRiskPercent.toFixed(2)}% balans`;
+
+            els.simBalanceTpOut.textContent = formatMoney(balanceAfterTP, currency);
+            els.simTpDeltaOut.textContent = potentialProfit > 0
+                ? `+${profitPct.toFixed(2)}% balans`
+                : 'TP kiritilmagan';
+
+            // Ketma-ket 5 ta SL simulyatsiyasi (Murakkab foiz asosida)
+            let simBal = balance;
+            const riskFraction = Math.min(1, effectiveRiskPercent / 100);
+            let stepsHTML = '';
+
+            for (let i = 1; i <= 5; i++) {
+                simBal = Math.max(0, simBal * (1 - riskFraction));
+                stepsHTML += `
+                    <div class="p-2 rounded-lg bg-terminal-input border border-terminal-border">
+                        <span class="block text-[10px] text-rose-400 font-bold">#${i} SL</span>
+                        <span class="block text-[11px] font-extrabold text-slate-200 mt-0.5 truncate">${formatCompactMoney(simBal, currency)}</span>
+                    </div>
+                `;
+            }
+
+            els.drawdownStepsGrid.innerHTML = stepsHTML;
+            const remainingPct = balance > 0 ? (simBal / balance) * 100 : 0;
+            els.drawdownRemainingPct.textContent = `${remainingPct.toFixed(1)}% qoladi`;
+
+            if (remainingPct >= 90) {
+                els.drawdownRemainingPct.className = 'text-xs font-extrabold text-emerald-400';
+            } else if (remainingPct >= 80) {
+                els.drawdownRemainingPct.className = 'text-xs font-extrabold text-amber-400';
+            } else {
+                els.drawdownRemainingPct.className = 'text-xs font-extrabold text-rose-400';
+            }
+
+            els.drawdownSummaryNote.textContent = `${effectiveRiskPercent.toFixed(1)}% risk bilan ketma-ket 5 marta zarar qilsangiz ham depozitingizning ${remainingPct.toFixed(2)}% qismi (${formatMoney(simBal, currency)}) saqlanib qoladi.`;
+
+            saveState();
+        }
+
+        // =========================================================================
+        // 6. HODISALAR (EVENT LISTENERS)
+        // =========================================================================
+        els.instrumentSelect.addEventListener('change', () => {
+            state.instrument = els.instrumentSelect.value;
+            updateInstrumentDetailsUI(true);
+            calculateAll();
+        });
+
+        els.accountCurrency.addEventListener('change', () => {
+            state.accountCurrency = els.accountCurrency.value;
+            updateInstrumentDetailsUI(false);
+            updateRiskModeUI();
+            calculateAll();
+        });
+
+        els.accountBalance.addEventListener('input', calculateAll);
+        els.accountExchangeRate.addEventListener('input', calculateAll);
+
+        els.pairQuoteRate.addEventListener('input', () => {
+            const qRate = Math.max(0.0001, safeNumber(els.pairQuoteRate.value, 1));
+            state.pairQuoteRate = qRate;
+            state.customPipValue = null;
+            const autoVal = computeAutoPipValueUSD(state.instrument, qRate);
+            els.pipValueOverride.value = autoVal.toFixed(2);
+            calculateAll();
+        });
+
+        els.riskModePercentBtn.addEventListener('click', () => {
+            state.riskMode = 'percent';
+            updateRiskModeUI();
+            calculateAll();
+        });
+
+        els.riskModeMoneyBtn.addEventListener('click', () => {
+            state.riskMode = 'money';
+            updateRiskModeUI();
+            calculateAll();
+        });
+
+        els.riskSlider.addEventListener('input', () => {
+            els.riskPercentInput.value = els.riskSlider.value;
+            calculateAll();
+        });
+
+        els.riskPercentInput.addEventListener('input', () => {
+            const val = safeNumber(els.riskPercentInput.value, 0);
+            els.riskSlider.value = Math.min(10, Math.max(0.1, val));
+            calculateAll();
+        });
+
+        els.riskPresetBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const val = parseFloat(btn.dataset.risk);
+                state.riskMode = 'percent';
+                updateRiskModeUI();
+                els.riskPercentInput.value = val;
+                els.riskSlider.value = val;
+                calculateAll();
+            });
+        });
+
+        els.riskMoneyInput.addEventListener('input', calculateAll);
+
+        els.tabPipsMode.addEventListener('click', () => {
+            state.calcMode = 'pips';
+            updateCalcModeUI();
+            calculateAll();
+        });
+
+        els.tabPriceMode.addEventListener('click', () => {
+            state.calcMode = 'price';
+            updateCalcModeUI();
+            calculateAll();
+        });
+
+        els.stopLossPips.addEventListener('input', calculateAll);
+        els.takeProfitPips.addEventListener('input', calculateAll);
+        els.entryPriceInput.addEventListener('input', calculateAll);
+        els.slPriceInput.addEventListener('input', calculateAll);
+        els.tpPriceInput.addEventListener('input', calculateAll);
+
+        els.pipValueOverride.addEventListener('input', () => {
+            const val = safeNumber(els.pipValueOverride.value, 0);
+            state.customPipValue = val > 0 ? val : null;
+            calculateAll();
+        });
+
+        // Lot hajmini nusxalash (Clipboard)
+        els.copyLotBtn.addEventListener('click', () => {
+            const lotText = els.standardLotOut.textContent;
+            const temp = document.createElement('input');
+            temp.value = lotText;
+            document.body.appendChild(temp);
+            temp.select();
+            try {
+                document.execCommand('copy');
+                els.copyLotIcon.className = 'fa-solid fa-check';
+                els.copyLotText.textContent = 'Nusxalandi!';
+                showToast(`Lot hajmi (${lotText}) nusxalandi!`);
+                setTimeout(() => {
+                    els.copyLotIcon.className = 'fa-regular fa-copy';
+                    els.copyLotText.textContent = 'Nusxalash';
+                }, 2000);
+            } catch (e) {
+                showToast("Nusxalashda xatolik yuz berdi");
+            }
+            document.body.removeChild(temp);
+        });
+
+        // Tiklash (Reset)
+        els.resetBtn.addEventListener('click', () => {
+            state = { ...defaultState };
+            saveState();
+            syncUIWithState();
+            calculateAll();
+            showToast("Barcha sozlamalar boshlang'ich holatga qaytarildi");
+        });
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            const msgEl = document.getElementById('toastMsg');
+            msgEl.textContent = message;
+            toast.classList.remove('translate-y-24', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-24', 'opacity-0');
+            }, 2500);
+        }
+
+        // Ilovani ishga tushirish
+        window.addEventListener('DOMContentLoaded', () => {
+            loadState();
+            syncUIWithState();
+            calculateAll();
+        });
+    </script>
+</body>
+</html>
